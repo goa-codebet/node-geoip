@@ -1,16 +1,35 @@
 {
-	"name"        :  "geoip-lite",
-	"version"     :  "1.4.2",
-	"description" :  "A light weight native JavaScript implementation of GeoIP API from MaxMind",
-	"keywords"    :  ["geo", "geoip", "ip", "ipv4", "ipv6", "geolookup", "maxmind", "geolite"],
-	"homepage"    :  "https://github.com/geoip-lite/node-geoip",
-	"author"      :  "Philip Tellis <philip@bluesmoon.info> (http://bluesmoon.info/)",
-	"files"       :  ["lib/", "data/", "test/","scripts/"],
-	"main"        :  "lib/geoip.js",
-	"repository"  :  { "type": "git", "url": "git://github.com/geoip-lite/node-geoip.git" },
-	"engines"     :  { "node": ">=5.10.0" },
+	"name": "geoip-lite-auto-update",
+	"version": "1.4.2",
+	"description": "A light weight native JavaScript implementation of GeoIP API from MaxMind. Forked from node-geoip. Auto updates every week.",
+	"keywords": [
+		"geo",
+		"geoip",
+		"ip",
+		"ipv4",
+		"ipv6",
+		"geolookup",
+		"maxmind",
+		"geolite"
+	],
+	"homepage": "https://github.com/goa-codebet/node-geoip",
+	"author": "Sebastian Österberg<sebastian@codebet.se>",
+	"files": [
+		"lib/",
+		"data/",
+		"test/",
+		"scripts/"
+	],
+	"main": "lib/geoip.js",
+	"repository": {
+		"type": "git",
+		"url": "git://github.com/goa-codebet/node-geoip.git"
+	},
+	"engines": {
+		"node": ">=5.10.0"
+	},
 	"scripts": {
-        "pretest": "eslint .",
+		"pretest": "eslint .",
 		"test": "nodeunit --reporter=minimal test/tests.js",
 		"updatedb": "node scripts/updatedb.js",
 		"updatedb-debug": "node scripts/updatedb.js debug",
