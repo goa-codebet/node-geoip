@@ -17,11 +17,6 @@ jobs:
       with:
         node-version: 12.x
 
-    - name: Whoami
-      run: npm whoami
-      env:
-        NODE_AUTH_TOKEN: ${{secrets.npm_token}}
-
     - name: Install dependencies
       run: npm install
 
