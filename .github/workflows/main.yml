@@ -1,8 +1,8 @@
 name: Auto Update
 
-on:
-  schedule:
-    - cron: "0 0 * * WED"
+on: [workflow_dispatch]
+  #schedule:
+  #  - cron: "0 0 * * WED"
 
 jobs:
   updatedb:
