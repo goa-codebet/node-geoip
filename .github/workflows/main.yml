@@ -31,7 +31,10 @@ jobs:
         message: "UpdateDB"
 
     - name: Bump Version
-      run: npm version patch
+      run: |
+        git config --global user.email "autoupdate@codebet.com"
+        git config --global user.name "AutoUpdate"
+        npm version patch
 
     - name: Npm publish
       run: npm publish
