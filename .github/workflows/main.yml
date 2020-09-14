@@ -5,29 +5,32 @@ on: [workflow_dispatch]
   #  - cron: "0 0 * * WED"
 
 jobs:
-  updatedb:
+  run:
+    name: UpdateDB and publish
     runs-on: ubuntu-latest
     steps:
-      - run: npm run-script
-        env:
-          LICENSE_KEY: ${{secrets.maxmind_token}}
+    - name: Checkout repo
+      uses: actions/checkout@v2
 
-  commit:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Add & Commit
-        uses: EndBug/add-and-commit@v4.4.0
-        with:
-          message: "Updatedb"
+    - name: Set up Node.js
+      uses: actions/setup-node@v1
+      with:
+        node-version: 12.x
 
-  version:
-    runs-on: ubuntu-latest
-    steps:
-      - run: npm version patch
+    - name: UpdateDB
+      run: npm run-script updatedb
+      env:
+        LICENSE_KEY: ${{secrets.maxmind_token}}
+        
+    - name: Add & Commit
+      uses: EndBug/add-and-commit@v4.4.0
+      with:
+        message: "UpdateDB"
 
-  publish:
-    runs-on: ubuntu-latest
-    steps:
-      - run: npm publish
-        env:
-          NODE_AUTH_TOKEN: ${{secrets.npm_token}}
+    - name: Bump Version
+      run: npm version patch
+
+    - name: Npm publish
+      run: npm publish
+      env:
+        NODE_AUTH_TOKEN: ${{secrets.npm_token}}
