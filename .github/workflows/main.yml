@@ -25,17 +25,18 @@ jobs:
       run: npm run-script updatedb
       env:
         LICENSE_KEY: ${{secrets.maxmind_token}}
-        
-    - name: Bump Version
+
+    - name: Add, Commit & Push
+      run: |
+        git commit -am "UpdateIPDB"
+        git push
+
+    - name: Bump Version & Push
       run: |
         git config --global user.email "autoupdate@codebet.com"
         git config --global user.name "AutoUpdate"
         npm version patch
-
-    - name: Add & Commit
-      uses: EndBug/add-and-commit@v4.4.0
-      with:
-        message: "UpdateDB"
+        git push
 
     - name: Npm publish
       run: npm publish --access public
