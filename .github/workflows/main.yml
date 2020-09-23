@@ -29,15 +29,21 @@ jobs:
 
     - name: Add, Commit & Push
       run: |
+        git config --global user.email "github_action@codebet.com"
+        git config --global user.name "AutoUpdate"
         git commit -am "UpdateIPDB"
         git push
+      env:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Bump Version & Push
       run: |
-        git config --global user.email "autoupdate@codebet.com"
+        git config --global user.email "github_action@codebet.com"
         git config --global user.name "AutoUpdate"
         npm version patch
         git push
+      env:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Npm publish
       run: npm publish --access public
