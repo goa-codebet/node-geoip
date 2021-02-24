@@ -31,7 +31,7 @@ jobs:
       run: |
         git config --global user.email "github_action@codebet.com"
         git config --global user.name "AutoUpdate"
-        git commit -am "UpdateIPDB"
+        git commit --allow-empty -am "UpdateIPDB"
         git push
       env:
         github_token: ${{ secrets.GITHUB_TOKEN }}
