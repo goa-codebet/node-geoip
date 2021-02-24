@@ -45,6 +45,11 @@ jobs:
       env:
         github_token: ${{ secrets.GITHUB_TOKEN }}
 
+    - name: Npm whoami
+      run: npm whoami
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
     - name: Npm publish
       run: npm publish --access public
       env:
