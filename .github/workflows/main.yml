@@ -25,7 +25,7 @@ jobs:
     - name: UpdateDB
       run: npm run-script updatedb
       env:
-        LICENSE_KEY: ${{secrets.maxmind_token}}
+        LICENSE_KEY: ${{ secrets.MAXMIND_TOKEN }}
 
     - name: Add, Commit & Push
       run: |
@@ -48,4 +48,4 @@ jobs:
     - name: Npm publish
       run: npm publish --access public
       env:
-        NODE_AUTH_TOKEN: ${{secrets.npm_token}}
+        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
