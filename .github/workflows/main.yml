@@ -1,0 +1,51 @@
+name: Auto Update
+
+on: 
+  workflow_dispatch:
+  schedule:
+    - cron: "0 0 * * WED"
+
+jobs:
+  run:
+    name: UpdateDB and publish
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v2
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v1
+      with:
+        node-version: '10.x'
+        registry-url: 'https://registry.npmjs.org'
+
+    - name: Install dependencies
+      run: npm install
+
+    - name: UpdateDB
+      run: npm run-script updatedb
+      env:
+        LICENSE_KEY: ${{ secrets.MAXMIND_TOKEN }}
+
+    - name: Add, Commit & Push
+      run: |
+        git config --global user.email "github_action@codebet.com"
+        git config --global user.name "AutoUpdate"
+        git commit --allow-empty -am "UpdateIPDB"
+        git push
+      env:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Bump Version & Push
+      run: |
+        git config --global user.email "github_action@codebet.com"
+        git config --global user.name "AutoUpdate"
+        npm version patch
+        git push
+      env:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Npm publish
+      run: npm publish --access public
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
