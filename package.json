@@ -1,6 +1,6 @@
 {
 	"name": "geoip-lite",
-	"version": "1.4.15",
+	"version": "1.4.16",
 	"description": "A light weight native JavaScript implementation of GeoIP API from MaxMind",
 	"keywords": [
 		"geo",
