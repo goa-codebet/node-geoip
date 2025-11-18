@@ -10,6 +10,7 @@ var https = require('https');
 var path = require('path');
 var url = require('url');
 var zlib = require('zlib');
+var readline = require('readline');
 
 fs.existsSync = fs.existsSync || path.existsSync;
 
@@ -44,9 +45,9 @@ if (typeof geodatadir !== 'undefined') {
 		process.exit(1);
 	}
 }
-var tmpPath = path.resolve(__dirname, '..', 'tmp');
+var tmpPath = process.env.GEOTMPDIR ? process.env.GEOTMPDIR : path.resolve(__dirname, '..', 'tmp');
 var countryLookup = {};
-var cityLookup = {};
+var cityLookup = {NaN: -1};
 var databases = [
 	{
 		type: 'country',
@@ -144,7 +145,11 @@ function getHTTPOptions(downloadUrl) {
 
 	if (process.env.http_proxy || process.env.https_proxy) {
 		try {
-			var HttpsProxyAgent = require('https-proxy-agent');
+			var HttpsProxyAgentModule = require('https-proxy-agent');
+			// Handle both v5/v6 (default export) and v7+ (named export) formats
+			var HttpsProxyAgent = typeof HttpsProxyAgentModule === 'function'
+				? HttpsProxyAgentModule
+				: (HttpsProxyAgentModule.HttpsProxyAgent || HttpsProxyAgentModule.default || HttpsProxyAgentModule);
 			options.agent = new HttpsProxyAgent(process.env.http_proxy || process.env.https_proxy);
 		}
 		catch (e) {
@@ -180,8 +185,10 @@ function check(database, cb) {
         
 		function onResponse(response) {
 			var status = response.statusCode;
-    
-			if (status !== 200) {
+
+			if(status === 301 || status === 302 || status === 303 || status === 307 || status === 308) {
+				return https.get(getHTTPOptions(response.headers.location), onResponse);
+			} else if (status !== 200) {
 				console.log(chalk.red('ERROR') + ': HTTP Request Failed [%d %s]', status, http.STATUS_CODES[status]);
 				client.abort();
 				process.exit(1);
@@ -242,7 +249,9 @@ function fetch(database, cb) {
 	function onResponse(response) {
 		var status = response.statusCode;
 
-		if (status !== 200) {
+		if(status === 301 || status === 302 || status === 303 || status === 307 || status === 308) {
+			return https.get(getHTTPOptions(response.headers.location), onResponse);
+		} else if (status !== 200) {
 			console.log(chalk.red('ERROR') + ': HTTP Request Failed [%d %s]', status, http.STATUS_CODES[status]);
 			client.abort();
 			process.exit(1);
@@ -340,9 +349,9 @@ function processLookupCountry(src, cb){
 		});
 }
 
-function processCountryData(src, dest, cb) {
+async function processCountryData(src, dest) {
 	var lines=0;
-	function processLine(line) {
+	async function processLine(line) {
 		var fields = CSVtoArray(line);
 
 		if (!fields || fields.length < 6) {
@@ -389,11 +398,17 @@ function processCountryData(src, dest, cb) {
 			}
 	
 			b.write(cc, bsz - 2);
-	
-			fs.writeSync(datFile, b, 0, bsz, null);
 			if(Date.now() - tstart > 5000) {
 				tstart = Date.now();
 				process.stdout.write('\nStill working (' + lines + ') ...');
+			}
+
+			if(datFile._writableState.needDrain) {
+				return new Promise((resolve) => {
+					datFile.write(b, resolve);
+				});
+			} else {
+				return datFile.write(b);
 			}
 		}
 	}
@@ -406,24 +421,25 @@ function processCountryData(src, dest, cb) {
 
 	process.stdout.write('Processing Data (may take a moment) ...');
 	var tstart = Date.now();
-	var datFile = fs.openSync(dataFile, "w");
+	var datFile = fs.createWriteStream(dataFile);
 
-	lazy(fs.createReadStream(tmpDataFile))
-		.lines
-		.map(function(byteArray) {
-			return iconv.decode(byteArray, 'latin1');
-		})
-		.skip(1)
-		.map(processLine)
-		.on('pipe', function() {
-			console.log(chalk.green(' DONE'));
-			cb();
-		});
+	var rl = readline.createInterface({
+		input: fs.createReadStream(tmpDataFile),
+		crlfDelay: Infinity
+	});
+	var i = 0;
+	for await (var line of rl) {
+		i++;
+		if(i == 1) continue;
+		await processLine(line);
+	}
+	datFile.close();
+	console.log(chalk.green(' DONE'));
 }
 
-function processCityData(src, dest, cb) {
+async function processCityData(src, dest) {
 	var lines = 0;
-	function processLine(line) {
+	async function processLine(line) {
 		if (line.match(/^Copyright/) || !line.match(/\d/)) {
 			return;
 		}
@@ -500,10 +516,17 @@ function processCityData(src, dest, cb) {
 			b.writeInt32BE(area,20);
 		}
 
-		fs.writeSync(datFile, b, 0, b.length, null);
 		if(Date.now() - tstart > 5000) {
 			tstart = Date.now();
 			process.stdout.write('\nStill working (' + lines + ') ...');
+		}
+
+		if(datFile._writableState.needDrain) {
+			return new Promise((resolve) => {
+				datFile.write(b, resolve);
+			});
+		} else {
+			return datFile.write(b);
 		}
 	}
 
@@ -514,16 +537,19 @@ function processCityData(src, dest, cb) {
 
 	process.stdout.write('Processing Data (may take a moment) ...');
 	var tstart = Date.now();
-	var datFile = fs.openSync(dataFile, "w");
+	var datFile = fs.createWriteStream(dataFile);
 
-	lazy(fs.createReadStream(tmpDataFile))
-		.lines
-		.map(function(byteArray) {
-			return iconv.decode(byteArray, 'latin1');
-		})
-		.skip(1)
-		.map(processLine)
-		.on('pipe', cb);
+	var rl = readline.createInterface({
+		input: fs.createReadStream(tmpDataFile),
+		crlfDelay: Infinity
+	});
+	var i = 0;
+	for await (var line of rl) {
+		i++;
+		if(i == 1) continue;
+		await processLine(line);
+	}
+	datFile.close();
 }
 
 function processCityDataNames(src, dest, cb) {
@@ -538,7 +564,7 @@ function processCityDataNames(src, dest, cb) {
 		var sz = 88;
 		var fields = CSVtoArray(line);
 		if (!fields) {
-			//lot's of cities contain ` or ' in the name and can't be parsed correctly with current method
+			//lots of cities contain ` or ' in the name and can't be parsed correctly with current method
 			console.log("weird line: %s::", line);
 			return;
 		}
@@ -599,10 +625,10 @@ function processData(database, cb) {
 	if (type === 'country') {
 		if(Array.isArray(src)){
 			processLookupCountry(src[0], function() {
-				processCountryData(src[1], dest[1], function() {
-					processCountryData(src[2], dest[2], function() {
-						cb(null, database);
-					});
+				processCountryData(src[1], dest[1]).then(() => {
+					return processCountryData(src[2], dest[2]);
+				}).then(() => {
+					cb(null, database);
 				});
 			});
 		}
@@ -613,12 +639,12 @@ function processData(database, cb) {
 		}
 	} else if (type === 'city') {
 		processCityDataNames(src[0], dest[0], function() {
-			processCityData(src[1], dest[1], function() {
+			processCityData(src[1], dest[1]).then(() => {
 				console.log("city data processed");
-				processCityData(src[2], dest[2], function() {
-					console.log(chalk.green(' DONE'));
-					cb(null, database);
-				});
+				return processCityData(src[2], dest[2]);
+			}).then(() => {
+				console.log(chalk.green(' DONE'));
+				cb(null, database);
 			});
 		});
 	}
@@ -653,8 +679,11 @@ async.eachSeries(databases, function(database, nextDatabase) {
 		process.exit(1);
 	} else {
 		console.log(chalk.green('Successfully Updated Databases from MaxMind.'));
-		if (args.indexOf("debug") !== -1) console.log(chalk.yellow.bold('Notice: temporary files are not deleted for debug purposes.'));
-		else rimraf(tmpPath);
+		if (args.indexOf("debug") !== -1) {
+			console.log(chalk.yellow.bold('Notice: temporary files are not deleted for debug purposes.'));
+		} else {
+			rimraf(tmpPath);
+		}
 		process.exit(0);
 	}
 });
