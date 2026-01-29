@@ -50,4 +50,4 @@ jobs:
         github_token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Npm publish
-      run: npm publish --access public
+      run: npm publish 
