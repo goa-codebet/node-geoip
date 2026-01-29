@@ -5,6 +5,10 @@ on:
   schedule:
     - cron: "0 0 * * WED"
 
+permissions:
+  id-token: write
+  contents: read
+  
 jobs:
   run:
     name: UpdateDB and publish
