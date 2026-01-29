@@ -23,7 +23,7 @@
 	"main": "lib/geoip.js",
 	"repository": {
 		"type": "git",
-		"url": "git://github.com/geoip-lite/node-geoip.git"
+		"url": "git://github.com/goa-codebet/node-geoip.git"
 	},
 	"engines": {
 		"node": ">=10.3.0"
