@@ -5,7 +5,9 @@ on:
   schedule:
     - cron: "0 0 * * WED"
 
-
+permissions:
+  id-token: write  # Required for OIDC
+  contents: write
   
 jobs:
   run:
