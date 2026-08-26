@@ -1,6 +1,6 @@
 {
 	"name": "@codebet/geoip-lite-auto-update",
-	"version": "1.4.230",
+	"version": "1.4.231",
 	"description": "A light weight native JavaScript implementation of GeoIP API from MaxMind",
 	"keywords": [
 		"geo",
